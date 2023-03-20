@@ -57,20 +57,28 @@ active proctype elevator_engine() {
 }
 
 // DUMMY main control process. Remodel it to control the doors and the engine!
-active proctype main_control() {
+active proctype main_control() { // (Rutger) should keep track of current floor and the direction of the elevator (A2 descr.)
 	byte dest;
 	do
 	:: go?dest -> // (Rutger) receives from req_handler to go to dest
 
 	   // (Rutger) TODO: make elevator move to dest
+	   move!true;
 
-	   // (Rutger) TODO: assure elevator is at dest
+	   // (Rutger) TODO: make engine stop
+	   floor_reached?true -> move!false;
+
+	   // (Rutger) TODO: assure elevator is at dest?
 
 	   current_floor = dest;
 
 	   // (Rutger) TODO: open doors
+	   update_cabin_door!true;
+	   cabin_door_updated?true; // (Rutger) wait for doors to be opened?
 
 	   // (Rutger) TODO: close doors
+	   update_cabin_door!false;
+	   cabin_door_updated?false; // (Rutger) wait for doors to be closed?
 
 	   // an example assertion.
 	   assert(0 <= current_floor && current_floor < N);
@@ -86,7 +94,7 @@ active proctype req_handler() {
 	do
 	:: request?dest -> go!dest; served?true;
 	// (Rutger) request?dest is asynchronous, such that it can hold messages and serves as a queue
-	// (Rutger) served?true makes it wait unti the request is served before receiving new requests
+	// (Rutger) served?true makes it wait until the request is served before receiving new requests
 	od;
 }
 
