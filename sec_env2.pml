@@ -7,6 +7,7 @@
 //ltl p1 { []<> (floor_request_made[1]==true) } /* this property does not hold, as a request for floor 1 can be indefinitely postponed. */
 ltl p2 { []<> (cabin_door_is_open==true) } /* this property should hold, but does not yet; at any moment during an execution, the opening of the cabin door will happen at some later point. */
 
+
 // the number of floors
 #define N	2
 
@@ -50,7 +51,7 @@ active proctype elevator_engine() {
 	:: move?true ->
 		do
 		:: move?false -> break;
-		:: floor_reached!true;
+		:: floor_reached!true; // (Rutger) So if true is send over move, it repeatedly sends out floor_reached true?
 		od;
 	od;
 }
@@ -59,8 +60,17 @@ active proctype elevator_engine() {
 active proctype main_control() {
 	byte dest;
 	do
-	:: go?dest ->
+	:: go?dest -> // (Rutger) receives from req_handler to go to dest
+
+	   // (Rutger) TODO: make elevator move to dest
+
+	   // (Rutger) TODO: assure elevator is at dest
+
 	   current_floor = dest;
+
+	   // (Rutger) TODO: open doors
+
+	   // (Rutger) TODO: close doors
 
 	   // an example assertion.
 	   assert(0 <= current_floor && current_floor < N);
@@ -75,13 +85,15 @@ active proctype req_handler() {
 	byte dest;
 	do
 	:: request?dest -> go!dest; served?true;
+	// (Rutger) request?dest is asynchronous, such that it can hold messages and serves as a queue
+	// (Rutger) served?true makes it wait unti the request is served before receiving new requests
 	od;
 }
 
 // request button associated to a floor i to request an elevator
-active [N] proctype req_button() {
+active [N] proctype req_button() { // (Rutger) 0 <= reqid < N, and is equal to a floor nr
 	do
-	:: !floor_request_made[reqid] ->
+	:: !floor_request_made[reqid] -> // (Rutger) if there is no request for floor [reqid] ->
 	   atomic {
 		request!reqid;
 		floor_request_made[reqid] = true;
