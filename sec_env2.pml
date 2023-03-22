@@ -5,8 +5,8 @@
 
 // LTL formulas to be verified
 //ltl p1 { []<> (floor_request_made[1]==true) } /* this property does not hold, as a request for floor 1 can be indefinitely postponed. */
-ltl a1 { [](floor_request_made[1] -> <>(floor_reached[1]))}
-ltl a2 { [](floor_request_made[2] -> <>(floor_reached[2]))}
+ltl a1 { [](floor_request_made[1] -> <>!(floor_request_made[1]))}
+ltl a2 { [](floor_request_made[2] -> <>!(floor_request_made[2]))}
 ltl b1 { []<> (cabin_door_is_open==true) } /* this property should hold, but does not yet; at any moment during an execution, the opening of the cabin door will happen at some later point. */
 ltl b2 { []<> (cabin_door_is_open==false)}
 
@@ -63,7 +63,7 @@ active proctype main_control() { // (Rutger) should keep track of current floor 
 	byte dest;
 	do
 	:: go?dest -> // (Rutger) receives from req_handler to go to dest
-	
+
 	    assert(reqid >= 0 && reqid <= N);
 
 	    // make sure doors are closed
@@ -85,7 +85,7 @@ active proctype main_control() { // (Rutger) should keep track of current floor 
 	   // (Rutger) TODO: close doors
 	   update_cabin_door!false;
 	   cabin_door_updated?false; // (Rutger) wait for doors to be closed?
-	   assert(!(cabin_door_is_open[current_floor]))
+	   assert(!(cabin_door_is_open))
 
 	   // an example assertion.
 	   assert(0 <= current_floor && current_floor < N);
