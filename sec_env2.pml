@@ -64,13 +64,14 @@ active proctype main_control() { // (Rutger) should keep track of current floor 
 	do
 	:: go?dest -> // (Rutger) receives from req_handler to go to dest
 
+	    // make sure doors are closed
+	   update_cabin_door!false;
+
 	   // (Rutger) TODO: make elevator move to dest
 	   move!true;
 
 	   // (Rutger) TODO: make engine stop
 	   floor_reached?true -> move!false;
-
-	   // (Rutger) TODO: assure elevator is at dest?
 
 	   current_floor = dest;
 
