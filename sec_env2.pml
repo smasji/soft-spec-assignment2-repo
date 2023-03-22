@@ -42,8 +42,8 @@ chan served = [0] of { bool };
 // cabin door process
 active proctype cabin_door() {
 	do
-	:: update_cabin_door?true -> floor_door_is_open[current_floor] = true; cabin_door_is_open = true; assert(floor_door_is_open[current_floor]); cabin_door_updated!true;
-	:: update_cabin_door?false -> cabin_door_is_open = false; floor_door_is_open[current_floor] = false;assert(!(cabin_door_is_open[current_floor])); cabin_door_updated!false;
+	:: update_cabin_door?true -> floor_door_is_open[current_floor] = true; cabin_door_is_open = true; cabin_door_updated!true;
+	:: update_cabin_door?false -> cabin_door_is_open = false; floor_door_is_open[current_floor] = false; cabin_door_updated!false;
 	od;
 }
 
@@ -63,6 +63,8 @@ active proctype main_control() { // (Rutger) should keep track of current floor 
 	byte dest;
 	do
 	:: go?dest -> // (Rutger) receives from req_handler to go to dest
+	
+	    assert(reqid >= 0 && reqid <= N);
 
 	    // make sure doors are closed
 	   update_cabin_door!false;
@@ -78,10 +80,12 @@ active proctype main_control() { // (Rutger) should keep track of current floor 
 	   // (Rutger) TODO: open doors
 	   update_cabin_door!true;
 	   cabin_door_updated?true; // (Rutger) wait for doors to be opened?
+	   assert(floor_door_is_open[current_floor])
 
 	   // (Rutger) TODO: close doors
 	   update_cabin_door!false;
 	   cabin_door_updated?false; // (Rutger) wait for doors to be closed?
+	   assert(!(cabin_door_is_open[current_floor]))
 
 	   // an example assertion.
 	   assert(0 <= current_floor && current_floor < N);
@@ -106,7 +110,6 @@ active [N] proctype req_button() { // (Rutger) 0 <= reqid < N, and is equal to a
 	do
 	:: !floor_request_made[reqid] -> // (Rutger) if there is no request for floor [reqid] ->
 	   atomic {
-		assert(reqid >= 0 && reqid <= N);
 		request!reqid;
 		floor_request_made[reqid] = true;
 	   }
