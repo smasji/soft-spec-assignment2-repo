@@ -66,8 +66,10 @@ active proctype main_control() { // (Rutger) should keep track of current floor 
 
 	    assert(dest >= 0 && dest <= N);
 
-	    // make sure doors are closed
+	   // make sure doors are closed
 	   update_cabin_door!false;
+	   cabin_door_updated?false; // (Rutger) wait for doors to be closed?
+	   assert(!(cabin_door_is_open))
 
 	   // (Rutger) TODO: make elevator move to dest
 	   move!true;
@@ -80,12 +82,7 @@ active proctype main_control() { // (Rutger) should keep track of current floor 
 	   // (Rutger) TODO: open doors
 	   update_cabin_door!true;
 	   cabin_door_updated?true; // (Rutger) wait for doors to be opened?
-	   assert(floor_door_is_open[current_floor])
-
-	   // (Rutger) TODO: close doors
-	   update_cabin_door!false;
-	   cabin_door_updated?false; // (Rutger) wait for doors to be closed?
-	   assert(!(cabin_door_is_open))
+	   assert(floor_door_is_open[current_floor])	   
 
 	   // an example assertion.
 	   assert(0 <= current_floor && current_floor < N);
