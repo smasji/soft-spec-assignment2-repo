@@ -5,8 +5,10 @@
 
 // LTL formulas to be verified
 //ltl p1 { []<> (floor_request_made[1]==true) } /* this property does not hold, as a request for floor 1 can be indefinitely postponed. */
-ltl p2 { []<> (cabin_door_is_open==true) } /* this property should hold, but does not yet; at any moment during an execution, the opening of the cabin door will happen at some later point. */
-
+ltl a1 { [](floor_request_made[1] -> <>(floor_reached[1]))}
+ltl a2 { [](floor_request_made[2] -> <>(floor_reached[2]))}
+ltl b1 { []<> (cabin_door_is_open==true) } /* this property should hold, but does not yet; at any moment during an execution, the opening of the cabin door will happen at some later point. */
+ltl b2 { []<> (cabin_door_is_open==false)}
 
 // the number of floors
 #define N	2
@@ -40,8 +42,8 @@ chan served = [0] of { bool };
 // cabin door process
 active proctype cabin_door() {
 	do
-	:: update_cabin_door?true -> floor_door_is_open[current_floor] = true; cabin_door_is_open = true; cabin_door_updated!true;
-	:: update_cabin_door?false -> cabin_door_is_open = false; floor_door_is_open[current_floor] = false; cabin_door_updated!false;
+	:: update_cabin_door?true -> floor_door_is_open[current_floor] = true; cabin_door_is_open = true; assert(floor_door_is_open[current_floor]); cabin_door_updated!true;
+	:: update_cabin_door?false -> cabin_door_is_open = false; floor_door_is_open[current_floor] = false;assert(!(cabin_door_is_open[current_floor])); cabin_door_updated!false;
 	od;
 }
 
@@ -103,6 +105,7 @@ active [N] proctype req_button() { // (Rutger) 0 <= reqid < N, and is equal to a
 	do
 	:: !floor_request_made[reqid] -> // (Rutger) if there is no request for floor [reqid] ->
 	   atomic {
+		assert(reqid >= 0 && reqid <= N);
 		request!reqid;
 		floor_request_made[reqid] = true;
 	   }
