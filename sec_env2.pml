@@ -64,7 +64,7 @@ active proctype main_control() { // (Rutger) should keep track of current floor 
 	do
 	:: go?dest -> // (Rutger) receives from req_handler to go to dest
 
-	    assert(dest >= 0 && dest <= N);
+	    assert(dest >= 0 && dest < N);
 
 	   // make sure doors are closed
 	   update_cabin_door!false;
