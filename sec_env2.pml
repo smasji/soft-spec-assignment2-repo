@@ -10,8 +10,8 @@ ltl a2 { [](floor_request_made[2] -> <>(current_floor == 2))}
 ltl b1 { []<> (cabin_door_is_open==true) } /* this property should hold, but does not yet; at any moment during an execution, the opening of the cabin door will happen at some later point. */
 ltl b2 { []<> (cabin_door_is_open==false)}
 
-// the number of floors
-#define N	2
+// the number of floors + zero-th floor
+#define N	4
 
 // IDs of req_button processes
 #define reqid _pid-4
