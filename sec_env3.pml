@@ -11,37 +11,53 @@ ltl a2 { [](floor_request_made[2] -> <>(current_floor == 2))}
 ltl b1 { []<> (cabin_door_is_open==true) } /* this property should hold, but does not yet; at any moment during an execution, the opening of the cabin door will happen at some later point. */
 ltl b2 { []<> (cabin_door_is_open==false)}
 
-// the number of floors + zero-th floor
+// the number of floors
 #define N	4
 
-// IDs of req_button processes
-#define reqid _pid-4
+// the number of elevators
+#define M   4
+
+
+// define all ID's
+#define cabind_id 		_pid
+#define elevatord_id	_pid - M
+#define mainc_id		_pid - 2*M
+#define reqid 			_pid - 3*M -1
 
 // type for direction of elevator, but we use 'direction'
 mtype { down, up, none };
 
 // asynchronous channel to handle passenger requests
 chan request = [N] of { byte };
+
 // status of requests per floor
 bool floor_request_made[N];
 
-// status of floor doors of the shaft of the single elevator
-bool floor_door_is_open[N];
+typedef elevators {
+	byte elevator[M];
+}
+
+typedef elevators_bool {
+	bool elevator_bool[M];
+}
+
+// status of floor doors per shaft
+elevators_bool floor_door_is_open[N];
 
 // status and synchronous channels for elevator cabin and engine
-byte current_floor;
-bool cabin_door_is_open;
-chan update_cabin_door = [0] of { bool };
-chan cabin_door_updated = [0] of { bool };
-chan move = [0] of { bool };
-chan floor_reached = [0] of { bool };
+byte current_floor[M];
+bool cabin_door_is_open[M];
+chan update_cabin_door[M] = [0] of { bool };
+chan cabin_door_updated[M] = [0] of { bool };
+chan move[M] = [0] of { bool };
+chan floor_reached[M] = [0] of { bool };
 
 // synchronous channels for communication between request handler and main control
-chan go = [0] of { byte };
-chan served = [0] of { bool };
+chan go[M] = [0] of { byte };
+chan served[M] = [0] of { bool };
 
 // cabin door process
-active proctype cabin_door() {
+active [M] proctype cabin_door() {
 	do
 	:: update_cabin_door?true -> floor_door_is_open[current_floor] = true; cabin_door_is_open = true; cabin_door_updated!true;
 	:: update_cabin_door?false -> cabin_door_is_open = false; floor_door_is_open[current_floor] = false; cabin_door_updated!false;
@@ -49,7 +65,7 @@ active proctype cabin_door() {
 }
 
 // process combining the elevator engine and sensors
-active proctype elevator_engine() {
+active [M] proctype elevator_engine() {
 	do
 	:: move?true ->
 		do
@@ -60,7 +76,7 @@ active proctype elevator_engine() {
 }
 
 // DUMMY main control process. Remodel it to control the doors and the engine!
-active proctype main_control() { // should keep track of current floor and the direction of the elevator (A2 descr.)
+active proctype [M] main_control() { // should keep track of current floor and the direction of the elevator (A2 descr.)
 	byte dest;
 	int direction; // up is 1, down is -1, stationairy is 0;
 	current_floor = 0; // design choice: elevator starts at floor 1
