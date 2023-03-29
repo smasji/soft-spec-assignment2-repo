@@ -5,6 +5,7 @@
 
 // LTL formulas to be verified
 //ltl p1 { []<> (floor_request_made[1]==true) } /* this property does not hold, as a request for floor 1 can be indefinitely postponed. */
+
 ltl a1 { [](floor_request_made[1] -> <>(current_floor == 1))}
 ltl a2 { [](floor_request_made[2] -> <>(current_floor == 2))}
 ltl b1 { []<> (cabin_door_is_open==true) } /* this property should hold, but does not yet; at any moment during an execution, the opening of the cabin door will happen at some later point. */
@@ -16,7 +17,7 @@ ltl b2 { []<> (cabin_door_is_open==false)}
 // IDs of req_button processes
 #define reqid _pid-4
 
-// type for direction of elevator
+// type for direction of elevator, but we use 'direction'
 mtype { down, up, none };
 
 // asynchronous channel to handle passenger requests
@@ -53,35 +54,49 @@ active proctype elevator_engine() {
 	:: move?true ->
 		do
 		:: move?false -> break;
-		:: floor_reached!true; // (Rutger) So if true is send over move, it repeatedly sends out floor_reached true?
+		:: floor_reached!true; // reaches next floor
 		od;
 	od;
 }
 
 // DUMMY main control process. Remodel it to control the doors and the engine!
-active proctype main_control() { // (Rutger) should keep track of current floor and the direction of the elevator (A2 descr.)
+active proctype main_control() { // should keep track of current floor and the direction of the elevator (A2 descr.)
 	byte dest;
+	int direction; // up is 1, down is -1, stationairy is 0;
+	current_floor = 0; // design choice: elevator starts at floor 1
 	do
-	:: go?dest -> // (Rutger) receives from req_handler to go to dest
+	:: go?dest -> // receives from req_handler to go to dest
 
-	    assert(dest >= 0 && dest < N);
+	    assert(dest >= 0 && dest < N); // assert that dest is a valid floor
 
-	   // make sure doors are closed
-	   update_cabin_door!false;
-	   cabin_door_updated?false; // (Rutger) wait for doors to be closed?
-	   assert(!(cabin_door_is_open))
+		// make sure doors are closed
+		update_cabin_door!false;
+		cabin_door_updated?false; //   wait for doors to be closed?
+		assert(!(cabin_door_is_open))
 
-	   // (Rutger) TODO: make elevator move to dest
-	   move!true;
+		if
+		:: current_floor < dest -> direction = 1 // should move up
+		:: current_floor > dest -> direction = -1 // should move down
+		:: else -> direction = 0; // should not move
+		fi
 
-	   // (Rutger) TODO: make engine stop
-	   floor_reached?true -> move!false;
+        if
+        :: direction == 0 -> skip; // do not move
+        :: else -> 
+            move!true;	// make elevator move
 
-	   current_floor = dest;
-
-	   // (Rutger) TODO: open doors
+            do // loop until dest is reached
+            :: floor_reached?true -> // wait for elevator to reach next floor
+                current_floor = current_floor + direction; // update current floor accordingly
+                if
+                :: current_floor == dest -> move!false; direction = 0; break; // if elevator is at dest, stop the loop
+                :: else -> skip; // else keep moving
+                fi
+            od
+        fi
+	   //  open doors
 	   update_cabin_door!true;
-	   cabin_door_updated?true; // (Rutger) wait for doors to be opened?
+	   cabin_door_updated?true; //   wait for doors to be opened?
 	   assert(floor_door_is_open[current_floor])	   
 
 	   // an example assertion.
@@ -97,15 +112,15 @@ active proctype req_handler() {
 	byte dest;
 	do
 	:: request?dest -> go!dest; served?true;
-	// (Rutger) request?dest is asynchronous, such that it can hold messages and serves as a queue
-	// (Rutger) served?true makes it wait until the request is served before receiving new requests
+	//   request?dest is asynchronous, such that it can hold messages and serves as a queue
+	//   served?true makes it wait until the request is served before receiving new requests
 	od;
 }
 
 // request button associated to a floor i to request an elevator
-active [N] proctype req_button() { // (Rutger) 0 <= reqid < N, and is equal to a floor nr
+active [N] proctype req_button() { //   0 <= reqid < N, and is equal to a floor nr
 	do
-	:: !floor_request_made[reqid] -> // (Rutger) if there is no request for floor [reqid] ->
+	:: !floor_request_made[reqid] -> //   if there is no request for floor [reqid] ->
 	   atomic {
 		request!reqid;
 		floor_request_made[reqid] = true;
