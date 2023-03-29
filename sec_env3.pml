@@ -20,7 +20,7 @@ ltl b2 { []<> (cabin_door_is_open==false)}
 
 // define all ID's
 #define cabind_id 		_pid
-#define elevatord_id	_pid - M
+#define elevatore_id	_pid - M
 #define mainc_id		_pid - 2*M
 #define reqid 			_pid - 3*M -1
 
@@ -59,18 +59,18 @@ chan served[M] = [0] of { bool };
 // cabin door process
 active [M] proctype cabin_door() {
 	do
-	:: update_cabin_door?true -> floor_door_is_open[current_floor] = true; cabin_door_is_open = true; cabin_door_updated!true;
-	:: update_cabin_door?false -> cabin_door_is_open = false; floor_door_is_open[current_floor] = false; cabin_door_updated!false;
+	:: update_cabin_door[cabind_id]?true -> floor_door_is_open[current_floor].elevator_bool[cabind_id] = true; cabin_door_is_open[cabind_id] = true; cabin_door_updated[cabind_id]!true;
+	:: update_cabin_door[cabind_id]?false -> cabin_door_is_open[cabind_id] = false; floor_door_is_open[current_floor].elevator_bool[cabind_id] = false; cabin_door_updated[cabind_id]!false;
 	od;
 }
 
 // process combining the elevator engine and sensors
 active [M] proctype elevator_engine() {
 	do
-	:: move?true ->
+	:: move[elevatore_id]?true ->
 		do
-		:: move?false -> break;
-		:: floor_reached!true; // reaches next floor
+		:: move[elevatore_id]?false -> break;
+		:: floor_reached[elevatore_id]!true; // reaches next floor
 		od;
 	od;
 }
@@ -79,55 +79,50 @@ active [M] proctype elevator_engine() {
 active proctype [M] main_control() { // should keep track of current floor and the direction of the elevator (A2 descr.)
 	byte dest;
 	int direction; // up is 1, down is -1, stationairy is 0;
-	current_floor = 0; // design choice: elevator starts at floor 1
+	current_floor[mainc_id] = 0; // design choice: elevator starts at floor 1
 	do
 	:: go?dest -> // receives from req_handler to go to dest
 
-	    assert(dest >= 0 && dest < N); // assert that dest is a valid floor
-
 		// make sure doors are closed
-		update_cabin_door!false;
-		cabin_door_updated?false; //   wait for doors to be closed?
-		assert(!(cabin_door_is_open))
+		update_cabin_door[mainc_id]!false;
+		cabin_door_updated[mainc_id]?false; //   wait for doors to be closed?
 
 		if
-		:: current_floor < dest -> direction = 1 // should move up
-		:: current_floor > dest -> direction = -1 // should move down
+		:: current_floor[mainc_id] < dest -> direction = 1 // should move up
+		:: current_floor[mainc_id] > dest -> direction = -1 // should move down
 		:: else -> direction = 0; // should not move
 		fi
 
         if
         :: direction == 0 -> skip; // do not move
         :: else -> 
-            move!true;	// make elevator move
+            move[mainc_id]!true; // make elevator move
 
             do // loop until dest is reached
-            :: floor_reached?true -> // wait for elevator to reach next floor
-                current_floor = current_floor + direction; // update current floor accordingly
+            :: floor_reached[mainc_id]?true -> // wait for elevator to reach next floor
+                current_floor[mainc_id] = current_floor + direction; // update current floor accordingly
                 if
-                :: current_floor == dest -> move!false; direction = 0; break; // if elevator is at dest, stop the loop
+                :: current_floor[mainc_id] == dest -> move[mainc_id]!false; direction = 0; break; // if elevator is at dest, stop the loop
                 :: else -> skip; // else keep moving
                 fi
             od
         fi
 	   //  open doors
-	   update_cabin_door!true;
-	   cabin_door_updated?true; //   wait for doors to be opened?
-	   assert(floor_door_is_open[current_floor])	   
-
-	   // an example assertion.
-	   assert(0 <= current_floor && current_floor < N);
+	   update_cabin_door[mainc_id]!true;
+	   cabin_door_updated[mainc_id]?true; //   wait for doors to be opened?
 
 	   floor_request_made[dest] = false;
-	   served!true;
+	   served[mainc_id]!true;
 	od;
 }
 
 // request handler process. Remodel this process to serve M elevators!
 active proctype req_handler() {
 	byte dest;
+	byte next;
+	next = 0;
 	do
-	:: request?dest -> go!dest; served?true;
+	:: request?dest -> go[next]!dest; served[next]?true; next = (next+1) % M;
 	//   request?dest is asynchronous, such that it can hold messages and serves as a queue
 	//   served?true makes it wait until the request is served before receiving new requests
 	od;
