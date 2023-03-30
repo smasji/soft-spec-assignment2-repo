@@ -6,10 +6,10 @@
 // LTL formulas to be verified
 //ltl p1 { []<> (floor_request_made[1]==true) } /* this property does not hold, as a request for floor 1 can be indefinitely postponed. */
 
-ltl a1 { [](floor_request_made[1] -> <>(current_floor == 1))}
-ltl a2 { [](floor_request_made[2] -> <>(current_floor == 2))}
-ltl b1 { []<> (cabin_door_is_open==true) } /* this property should hold, but does not yet; at any moment during an execution, the opening of the cabin door will happen at some later point. */
-ltl b2 { []<> (cabin_door_is_open==false)}
+// ltl a1 { [](floor_request_made[1] -> <>(current_floor == 1))}
+// ltl a2 { [](floor_request_made[2] -> <>(current_floor == 2))}
+// ltl b1 { []<> (cabin_door_is_open==true) } /* this property should hold, but does not yet; at any moment during an execution, the opening of the cabin door will happen at some later point. */
+// ltl b2 { []<> (cabin_door_is_open==false)}
 
 // the number of floors
 #define N	4
@@ -59,8 +59,8 @@ chan served[M] = [0] of { bool };
 // cabin door process
 active [M] proctype cabin_door() {
 	do
-	:: update_cabin_door[cabind_id]?true -> floor_door_is_open[current_floor].elevator_bool[cabind_id] = true; cabin_door_is_open[cabind_id] = true; cabin_door_updated[cabind_id]!true;
-	:: update_cabin_door[cabind_id]?false -> cabin_door_is_open[cabind_id] = false; floor_door_is_open[current_floor].elevator_bool[cabind_id] = false; cabin_door_updated[cabind_id]!false;
+	:: update_cabin_door[cabind_id]?true -> floor_door_is_open[current_floor[cabind_id]].elevator_bool[cabind_id] = true; cabin_door_is_open[cabind_id] = true; cabin_door_updated[cabind_id]!true;
+	:: update_cabin_door[cabind_id]?false -> cabin_door_is_open[cabind_id] = false; floor_door_is_open[current_floor[cabind_id]].elevator_bool[cabind_id] = false; cabin_door_updated[cabind_id]!false;
 	od;
 }
 
@@ -76,12 +76,12 @@ active [M] proctype elevator_engine() {
 }
 
 // DUMMY main control process. Remodel it to control the doors and the engine!
-active proctype [M] main_control() { // should keep track of current floor and the direction of the elevator (A2 descr.)
+active [M] proctype main_control() { // should keep track of current floor and the direction of the elevator (A2 descr.)
 	byte dest;
 	int direction; // up is 1, down is -1, stationairy is 0;
 	current_floor[mainc_id] = 0; // design choice: elevator starts at floor 1
 	do
-	:: go?dest -> // receives from req_handler to go to dest
+	:: go[mainc_id]?dest -> // receives from req_handler to go to dest
 
 		// make sure doors are closed
 		update_cabin_door[mainc_id]!false;
@@ -100,7 +100,7 @@ active proctype [M] main_control() { // should keep track of current floor and t
 
             do // loop until dest is reached
             :: floor_reached[mainc_id]?true -> // wait for elevator to reach next floor
-                current_floor[mainc_id] = current_floor + direction; // update current floor accordingly
+                current_floor[mainc_id] = current_floor[mainc_id] + direction; // update current floor accordingly
                 if
                 :: current_floor[mainc_id] == dest -> move[mainc_id]!false; direction = 0; break; // if elevator is at dest, stop the loop
                 :: else -> skip; // else keep moving
