@@ -11,6 +11,10 @@
 // ltl b1 { []<> (cabin_door_is_open==true) } /* this property should hold, but does not yet; at any moment during an execution, the opening of the cabin door will happen at some later point. */
 // ltl b2 { []<> (cabin_door_is_open==false)}
 
+ltl e { [](floor_request_made[req_id] -> <>(!(floor_request_made[req_id]))) }
+ltl f { []<>(next == 0) && []<>(!(next == 0)) }
+ltl h { <>(floor_request_made[N-1]) }
+
 // the number of floors
 #define N	4
 
@@ -113,6 +117,7 @@ active [M] proctype main_control() { // should keep track of current floor and t
 
 	   floor_request_made[dest] = false;
 	   served[mainc_id]!true;
+	   assert(current_floor[mainc_id] == dest)
 	od;
 }
 
