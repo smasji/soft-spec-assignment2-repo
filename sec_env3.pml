@@ -11,9 +11,7 @@
 // ltl b1 { []<> (cabin_door_is_open==true) } /* this property should hold, but does not yet; at any moment during an execution, the opening of the cabin door will happen at some later point. */
 // ltl b2 { []<> (cabin_door_is_open==false)}
 
-ltl e { [](floor_request_made[req_id] -> <>(!(floor_request_made[req_id]))) }
-ltl f { []<>(next == 0) && []<>(!(next == 0)) }
-ltl h { <>(floor_request_made[N-1]) }
+
 
 // the number of floors
 #define N	4
@@ -21,12 +19,23 @@ ltl h { <>(floor_request_made[N-1]) }
 // the number of elevators
 #define M   4
 
+ltl e1 { ((floor_request_made[0] == true) -> <>(floor_request_made[0] == false)) }
+ltl e2 { []((floor_request_made[1] == true) -> <>(floor_request_made[1] == false)) }
+ltl e3 { []((floor_request_made[2] == true) -> <>(floor_request_made[2] == false)) }
+ltl e4 { []((floor_request_made[3] == true) -> <>(floor_request_made[3] == false)) }
+ltl f1 { <>(total == M) }
+ltl h { <>(floor_request_made[N-1] == true) }
+
 
 // define all ID's
 #define cabind_id 		_pid
 #define elevatore_id	_pid - M
 #define mainc_id		_pid - 2*M
 #define reqid 			_pid - 3*M -1
+
+// used for storing the next elevator in the elevator selection algo
+byte next;
+int total;
 
 // type for direction of elevator, but we use 'direction'
 mtype { down, up, none };
@@ -124,10 +133,10 @@ active [M] proctype main_control() { // should keep track of current floor and t
 // request handler process. Remodel this process to serve M elevators!
 active proctype req_handler() {
 	byte dest;
-	byte next;
 	next = 0;
+	total = 0;
 	do
-	:: request?dest -> go[next]!dest; served[next]?true; next = (next+1) % M;
+	:: request?dest -> go[next]!dest; served[next]?true; total = next + 1; next = (next+1) % M;
 	//   request?dest is asynchronous, such that it can hold messages and serves as a queue
 	//   served?true makes it wait until the request is served before receiving new requests
 	od;
