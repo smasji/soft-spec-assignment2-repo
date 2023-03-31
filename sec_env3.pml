@@ -17,21 +17,21 @@
 #define N	4
 
 // the number of elevators
-#define M   4
+#define M   2
 
-ltl e1 { ((floor_request_made[0] == true) -> <>(floor_request_made[0] == false)) }
-ltl e2 { []((floor_request_made[1] == true) -> <>(floor_request_made[1] == false)) }
-ltl e3 { []((floor_request_made[2] == true) -> <>(floor_request_made[2] == false)) }
-ltl e4 { []((floor_request_made[3] == true) -> <>(floor_request_made[3] == false)) }
-ltl f1 { <>(total == M) }
-ltl h { <>(floor_request_made[N-1] == true) }
+// ltl e1 { []((floor_request_made[0] == true) -> <>(floor_request_made[0] == false)) }
+// ltl e2 { []((floor_request_made[1] == true) -> <>(floor_request_made[1] == false)) }
+// ltl e3 { []((floor_request_made[2] == true) -> <>(floor_request_made[2] == false)) }
+// ltl e4 { []((floor_request_made[3] == true) -> <>(floor_request_made[3] == false)) }
+// ltl f1 { <>(total == M) }
+ltl h { []<>(floor_request_made[N-1]) }
 
 
 // define all ID's
 #define cabind_id 		_pid
 #define elevatore_id	_pid - M
 #define mainc_id		_pid - 2*M
-#define reqid 			_pid - 3*M -1
+#define reqid 			_pid - 3*M - 1
 
 // used for storing the next elevator in the elevator selection algo
 byte next;
