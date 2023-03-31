@@ -1,30 +1,15 @@
-/*
-	Elevator template model for Assignment 2 of 2IX20 - Software Specification.
-	Set up for one elevator and two floors.
-*/
-
-// LTL formulas to be verified
-//ltl p1 { []<> (floor_request_made[1]==true) } /* this property does not hold, as a request for floor 1 can be indefinitely postponed. */
-
-// ltl a1 { [](floor_request_made[1] -> <>(current_floor == 1))}
-// ltl a2 { [](floor_request_made[2] -> <>(current_floor == 2))}
-// ltl b1 { []<> (cabin_door_is_open==true) } /* this property should hold, but does not yet; at any moment during an execution, the opening of the cabin door will happen at some later point. */
-// ltl b2 { []<> (cabin_door_is_open==false)}
-
-
-
 // the number of floors
 #define N	4
 
 // the number of elevators
 #define M   2
 
-// ltl e1 { []((floor_request_made[0] == true) -> <>(floor_request_made[0] == false)) }
-// ltl e2 { []((floor_request_made[1] == true) -> <>(floor_request_made[1] == false)) }
-// ltl e3 { []((floor_request_made[2] == true) -> <>(floor_request_made[2] == false)) }
-// ltl e4 { []((floor_request_made[3] == true) -> <>(floor_request_made[3] == false)) }
-// ltl f1 { <>(total == M) }
-ltl h { []<>(floor_request_made[N-1]) }
+ltl e1 { []((floor_request_made[0] == true) -> <>(floor_request_made[0] == false)) }
+ltl e2 { []((floor_request_made[1] == true) -> <>(floor_request_made[1] == false)) }
+ltl e3 { []((floor_request_made[2] == true) -> <>(floor_request_made[2] == false)) }
+ltl e4 { []((floor_request_made[3] == true) -> <>(floor_request_made[3] == false)) }
+ltl f1 { <>(total == M) }
+ltl h { <>(floor_request_made[N-2]) }
 
 
 // define all ID's
